@@ -1,0 +1,5 @@
+# Minimal requirements - only the packages you need to install manually
+# The rest will be installed as dependencies
+opencv-contrib-python==4.11.0.86
+mediapipe==0.10.5
+numpy==1.26.4
