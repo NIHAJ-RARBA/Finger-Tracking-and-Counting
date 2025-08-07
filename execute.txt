@@ -1,0 +1,2 @@
+ .\mp_env_310\Scripts\activate
+ python hand_recognition.py
