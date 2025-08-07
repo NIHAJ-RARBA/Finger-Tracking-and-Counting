@@ -2,6 +2,8 @@
 
 A sophisticated real-time hand detection and finger counting system utilizing MediaPipe and OpenCV with advanced finger extension detection algorithms.
 
+Originally built a be part of a MicroController Project to set/unset traps numbered 1-5. Excluded in revised project plans in favour of a more hardware focused approach.
+
 ## Overview
 
 This application provides accurate finger counting capabilities through computer vision techniques, supporting simultaneous tracking of both hands with intelligent detection algorithms that handle edge cases commonly found in gesture recognition systems.
