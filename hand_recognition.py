@@ -62,7 +62,9 @@ while True:
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(img_rgb)
 
-    finger_count = 0
+    total_finger_count = 0
+    left_finger_count = 0
+    right_finger_count = 0
 
     if results.multi_hand_landmarks and results.multi_handedness:
         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
@@ -91,13 +93,13 @@ while True:
             ]
             
             # Count extended fingers
-            finger_count = 0
+            current_hand_finger_count = 0
             fingers_status = []
             
             # Check thumb with hand-specific logic
             thumb_extended = is_thumb_extended(thumb_tip, thumb_ip, thumb_mcp, wrist)
             if thumb_extended:
-                finger_count += 1
+                current_hand_finger_count += 1
             fingers_status.append(f"T:{thumb_extended}")
             
             # Check other four fingers with curl detection
@@ -105,18 +107,42 @@ while True:
             for i, (tip, pip, mcp) in enumerate(finger_landmarks):
                 extended = is_finger_extended(tip, pip, mcp, wrist)
                 if extended:
-                    finger_count += 1
+                    current_hand_finger_count += 1
                 fingers_status.append(f"{finger_names[i]}:{extended}")
+
+            # Add to appropriate hand counter
+            if hand_label == "Left":
+                left_finger_count = current_hand_finger_count
+            else:  # Right hand
+                right_finger_count = current_hand_finger_count
 
             mp_draw.draw_landmarks(img, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             
-            # Display finger status for debugging
+            # Display finger status for debugging in different positions for each hand
             status_text = " ".join(fingers_status)
-            cv2.putText(img, f'{hand_label}: {status_text}', (10, 80 + len(results.multi_hand_landmarks) * 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            if hand_label == "Left":
+                # Left hand info on separate lines
+                cv2.putText(img, f'Left: {current_hand_finger_count}', (10, 120),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                cv2.putText(img, f'L: {status_text}', (10, 150),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            else:
+                # Right hand info on different lines below left hand
+                cv2.putText(img, f'Right: {current_hand_finger_count}', (10, 180),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
+                cv2.putText(img, f'R: {status_text}', (10, 210),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-    cv2.putText(img, f'Fingers: {finger_count}', (10, 50),
+    # Calculate total finger count
+    total_finger_count = left_finger_count + right_finger_count
+
+    # Display total count prominently at the top
+    cv2.putText(img, f'Total Fingers: {total_finger_count}', (10, 50),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
+    
+    # Display individual hand counts summary
+    cv2.putText(img, f'L:{left_finger_count} + R:{right_finger_count}', (10, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
     cv2.imshow("Hand Tracking", img)
 
