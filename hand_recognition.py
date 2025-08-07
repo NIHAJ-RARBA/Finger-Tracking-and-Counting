@@ -16,6 +16,20 @@ cap = cv2.VideoCapture(0)
 def calculate_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
+def is_landmark_visible(landmark, image_shape):
+    """Check if landmark is visible and reliable"""
+    h, w, _ = image_shape
+    x, y = int(landmark.x * w), int(landmark.y * h)
+    
+    # Check if landmark is within image bounds (with some margin)
+    margin = 10
+    if x < -margin or x >= w + margin or y < -margin or y >= h + margin:
+        return False
+    
+    # MediaPipe hand landmarks don't have visibility scores, so just return True
+    # (visibility is mainly for pose landmarks)
+    return True
+
 def is_finger_extended(tip, pip, mcp, wrist):
     """Check if finger is extended using multiple criteria"""
     # Distance-based check: tip should be farther from wrist than PIP
@@ -26,13 +40,18 @@ def is_finger_extended(tip, pip, mcp, wrist):
     mcp_pip_dist = calculate_distance(mcp, pip)
     tip_pip_dist = calculate_distance(tip, pip)
     
+    # Relaxed check: finger pulled into palm (tip closer to palm center than MCP)
+    mcp_wrist_dist = calculate_distance(mcp, wrist)
+    palm_pull_check = tip_wrist_dist > mcp_wrist_dist * 0.7  # More lenient threshold
+    
     # Finger is extended if:
     # 1. Tip is farther from wrist than PIP
     # 2. The finger segments are reasonably straight
+    # 3. Finger is not severely pulled into palm
     distance_check = tip_wrist_dist > pip_wrist_dist * 1.1
     straightness_check = tip_pip_dist > mcp_pip_dist * 0.8
     
-    return distance_check and straightness_check
+    return distance_check and straightness_check and palm_pull_check
 
 def is_thumb_extended(thumb_tip, thumb_ip, thumb_mcp, wrist):
     """Check if thumb is extended using distance and angle"""
@@ -52,7 +71,10 @@ def is_thumb_extended(thumb_tip, thumb_ip, thumb_mcp, wrist):
     tip_ip_dist = calculate_distance(thumb_tip, thumb_ip)
     straightness_check = tip_ip_dist > ip_mcp_dist * 0.7
     
-    return distance_extended and mcp_distance_check and straightness_check
+    # Relaxed palm pull check: thumb not severely pulled into palm
+    palm_pull_check = tip_wrist_dist > mcp_wrist_dist * 0.6  # More lenient for thumb
+    
+    return distance_extended and mcp_distance_check and straightness_check and palm_pull_check
 
 while True:
     success, img = cap.read()
@@ -68,6 +90,7 @@ while True:
 
     if results.multi_hand_landmarks and results.multi_handedness:
         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+            # Simplified visibility check - only check if hand is detected (which it is if we're here)
             lm_list = []
             for id, lm in enumerate(hand_landmarks.landmark):
                 h, w, _ = img.shape
