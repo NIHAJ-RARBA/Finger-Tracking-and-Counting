@@ -2,6 +2,8 @@
 
 This project provides a computer vision-based finger tracking and counting system using MediaPipe and OpenCV.
 
+Originally built a be part of a MicroController Project to set/unset traps numbered 1-5. Excluded in revised project plans.
+
 ## Prerequisites
 
 - Python 3.10 (required for compatibility)
